@@ -41,4 +41,4 @@ Times are entered as `H:MM` with the hour from 1 to 12, then AM or PM (for examp
 * Team IDs must be whole numbers, and there is no editing or deleting of teams or matches.
 
 ---
-*Developed by Jayden Flores for CS 385.*
+*Developed by Jayden Flores for CS 254.*
