@@ -73,10 +73,17 @@ public class AVLTree {
         fillArray(node.getRightChild(), teamArray, index);
      }
 
+    // Returns the number of teams currently stored
+    public int size() { return size; }
+
     // Public wrapper - Begins the recursive insertion process starting at the root
-    public void insert(Team team) {
+    // Returns false (and changes nothing) if a team with the same ID already exists,
+    // so size always matches the number of nodes actually in the tree
+    public boolean insert(Team team) {
+        if (search(team.getID()) != null) { return false; }
         root = insert(root, team);
         size++;
+        return true;
     }
 
     // Private engine - Compares IDs to dive left or right until it finds an empty spot
