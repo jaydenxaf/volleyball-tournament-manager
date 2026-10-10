@@ -1,34 +1,44 @@
 # Dynamic Volleyball Tournament Manager 🏐
 
-A Java-based backend tournament management system designed to handle the real-time logistical challenges of tracking team standings and match schedules. Built as a terminal-based CRUD application, this project focuses on optimal memory management and algorithm efficiency by implementing self-balancing data structures from scratch.
+A terminal-based Java application for tracking team standings and match schedules. The focus is algorithm efficiency: the core data structures and sorting/searching algorithms are implemented from scratch rather than using `java.util` collections.
 
 ## Features
-* **Live Leaderboards:** Dynamically ranks teams based on win/loss percentages.
-* **Match Scheduling:** Inserts new matches into a strict chronological timeline.
-* **Rapid Retrieval:** Instantly searches for matches by time without scanning the entire database.
-* **Crash-Proof UI:** Terminal interface handles invalid user inputs safely to prevent fatal runtime exceptions.
+* **Team registry:** Register teams with a unique ID and starting record. Duplicate IDs are rejected.
+* **Leaderboard:** Ranks teams by win percentage.
+* **Match scheduling:** Inserts matches into a chronological schedule. Rejects unknown team IDs, a team playing itself, and two matches at the same start time.
+* **Match lookup:** Finds the match at a given time with binary search.
+* **Results:** Recording a winner updates both teams' records, so the leaderboard changes.
+* **Input validation:** Menu choices, IDs, records and times are validated and re-prompted instead of crashing.
 
 ## Data Structures & Algorithms
-To ensure optimal performance as the tournament scales, this application avoids sluggish standard arrays and instead relies on advanced, custom-built data structures:
+* **AVL tree (team database):** `Team` objects are stored in a self-balancing AVL tree keyed by team ID, with rotations and height tracking. Insert and search are O(log N).
+* **Quick sort (leaderboard):** The tree is copied to an array in ID order and sorted by win percentage, highest first. Average O(N log N). It uses a middle-element pivot, so already-sorted input and many tied records do not trigger the O(N²) worst case of a last-element pivot.
+* **Binary search (match lookup):** Recursive search over the schedule array by military time (e.g. 2:30 PM = 1430), O(log N).
+* **Insertion sort (scheduling):** Each new match is shifted into its chronological position. O(N) per insert, which is fine for a schedule capped at 100 matches.
 
-* **AVL Tree (Primary Database):** All `Team` objects are stored in a self-balancing AVL Tree using their unique ID as the key. This guarantees **O(log N)** time complexity for all team insertions and searches.
-* **Quick Sort:** When generating the leaderboard, the system extracts the AVL Tree to an array and utilizes a Quick Sort algorithm to rank teams by win percentage in **O(N log N)** time.
-* **Binary Search:** The scheduling engine utilizes a recursive Binary Search to locate scheduled matches in **O(log N)** time.
-* **Insertion Sort:** When scheduling a new match, the engine uses an Insertion Sort to safely shift existing matches to the right, maintaining a strict chronological array without throwing `ArrayIndexOutOfBoundsExceptions`.
-
-## Software Architecture
-To strictly adhere to the **Single Responsibility Principle**, the codebase is modularized into a 4-layer architecture:
-1. **`ui` (User Interface):** Houses the `Main` class and scanner logic for terminal interactions.
-2. **`engine` (Business Logic):** Houses the `TournamentManager`, isolating all sorting and searching algorithms.
-3. **`structures` (Data Management):** Contains the custom `AVLTree` and `AVLNode` classes.
-4. **`models` (Data Containers):** Contains the encapsulated `Team` and `Match` objects.
+## Architecture
+The code is split into four packages:
+1. **`ui`:** `Main`, which handles terminal input/output and validation.
+2. **`engine`:** `TournamentManager`, which holds the sorting, searching and scheduling logic.
+3. **`structures`:** `AVLTree` and `AVLNode`.
+4. **`models`:** `Team` and `Match`.
 
 ## How to Run
-Ensure you have the Java Development Kit (JDK) installed on your machine.
-1. Clone the repository: `git clone https://github.com/jaydenxaf/volleyball-tournament-manager.git`
-2. Navigate to the project directory.
-3. Compile the Java files: `javac src/ui/Main.java` (Adjust path depending on IDE setup).
-4. Run the application: `java src.ui.Main`
+Requires a JDK (Java 8 or newer).
+
+```bash
+git clone https://github.com/jaydenxaf/volleyball-tournament-manager.git
+cd volleyball-tournament-manager
+javac -d out -sourcepath src src/ui/Main.java
+java -cp out ui.Main
+```
+
+Times are entered as `H:MM` with the hour from 1 to 12, then AM or PM (for example `2:30`, then `PM`).
+
+## Known Limitations
+* The schedule holds at most 100 matches and one match per start time. There is no separate handling of multiple courts at the same time.
+* Data is in memory only and is lost when the program exits.
+* Team IDs must be whole numbers, and there is no editing or deleting of teams or matches.
 
 ---
-*Developed by Jayden Flores for CS-253.*
+*Developed by Jayden Flores for CS 385.*
