@@ -27,15 +27,39 @@ public class TournamentManager {
         this.matchCount = 0;
     }
 
-    // Takes a team  object and inserts it into the AVL Tree
-    public void registerTeam(Team t) {
-        tree.insert(t);
+    // Takes a team object and inserts it into the AVL Tree
+    // Returns false if the ID is already taken
+    public boolean registerTeam(Team t) {
+        return tree.insert(t);
+    }
+
+    // Looks up a team by ID in O(log N); returns null if it does not exist
+    public Team findTeam(int id) {
+        return tree.search(id);
+    }
+
+    /**
+     * Records a finished match: gives the winner a win and the loser a loss,
+     * which changes the leaderboard. Returns false if either ID is unknown,
+     * the IDs are the same, or the match was not found/already finished.
+     */
+    public boolean recordResult(Match match, int winnerId) {
+        if (match == null || match.isMatchFinished()) return false;
+        if (winnerId != match.getTeamAId() && winnerId != match.getTeamBId()) return false;
+        int loserId = (winnerId == match.getTeamAId()) ? match.getTeamBId() : match.getTeamAId();
+        Team winner = tree.search(winnerId);
+        Team loser = tree.search(loserId);
+        if (winner == null || loser == null) return false;
+        winner.addWin();
+        loser.addLoss();
+        match.finishMatch();
+        return true;
     }
 
     /**
      * Extracts all teams from the tree into an array
      * Executes quick sort to rank them by win percentage
-     * Returns the sorted leaderboard in O(N log N) time
+     * Returns the sorted leaderboard in O(N log N) average time
      */
     public Team[] getLeaderboard() {
         Team[] allTeams = tree.toArray();
@@ -47,6 +71,9 @@ public class TournamentManager {
     }
 
     // A recursive divide-and-conquer algorithm that sorts the team array
+    // Average O(N log N). The pivot is the middle element (moved to the end), so
+    // already-sorted input and long runs of tied win percentages avoid the O(N^2)
+    // worst case that a fixed last-element pivot would hit
     public static void quickSort(Team[] allTeams, int low, int high) {
         if (low < high) {
             // Finds the correct spot for the pivot
@@ -63,6 +90,8 @@ public class TournamentManager {
      * Pushes the highest percentages to the front
      */
     private static int quickSortPartition(Team[] allTeams, int low, int high) {
+        // Move the middle element to the end so it acts as the pivot
+        swap(allTeams, low + (high - low) / 2, high);
         Team pivot = allTeams[high];
         int i = low - 1;
 
@@ -133,11 +162,23 @@ public class TournamentManager {
      * Adds a newly scheduled match to the array
      * Uses Insertion Sort to guarantee the array remains chronologically sorted
      */
-    public void scheduleMatch(Match newMatch) {
-        // Prints error if the schedule is full
+    // Returns null on success, or a short error message explaining why it was rejected
+    public String scheduleMatch(Match newMatch) {
         if (matchCount >= matches.length) {
-            System.out.println("Error: Schedule is completely full");
-            return;
+            return "The schedule is completely full.";
+        }
+        if (newMatch.getTeamAId() == newMatch.getTeamBId()) {
+            return "A team cannot play itself.";
+        }
+        if (tree.search(newMatch.getTeamAId()) == null) {
+            return "Team ID " + newMatch.getTeamAId() + " is not registered.";
+        }
+        if (tree.search(newMatch.getTeamBId()) == null) {
+            return "Team ID " + newMatch.getTeamBId() + " is not registered.";
+        }
+        // Only one match per start time, so a binary search by time is unambiguous
+        if (findMatchByTime(newMatch.getTime()) != null) {
+            return "A match is already scheduled at that time.";
         }
 
         // Start at end of array
@@ -152,6 +193,7 @@ public class TournamentManager {
         // Drop the new match into the correct chronological spot
         matches[i + 1] = newMatch;
         matchCount++;
+        return null;
     }
 
 }
